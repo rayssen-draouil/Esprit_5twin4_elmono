@@ -1,0 +1,1 @@
+@props(['href' => null, 'variant' => 'primary'])@if($href)<a href="{{ $href }}" {{ $attributes->merge(['class' => 'button button-'.$variant]) }}>{{ $slot }}</a>@else<button {{ $attributes->merge(['class' => 'button button-'.$variant]) }}>{{ $slot }}</button>@endif
