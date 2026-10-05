@@ -3,14 +3,136 @@
 namespace App\Http\Controllers\Back;
 
 use App\Http\Controllers\Controller;
+use App\Models\Financement;
+use App\Models\Incident;
+use App\Models\Infrastructure;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\View\View;
 
 class BackController extends Controller
 {
-    public function dashboard(): View { return view('back.dashboard', ['kpis' => [['label' => 'Sites surveillés', 'value' => '128', 'trend' => '+12'], ['label' => 'Incidents actifs', 'value' => '12', 'trend' => '+8%'], ['label' => 'Infrastructures critiques', 'value' => '04', 'trend' => '-2'], ['label' => 'Projets actifs', 'value' => '24', 'trend' => '+3'], ['label' => 'Budget total', 'value' => '4,8 M€', 'trend' => '+18%']], 'activity' => ['Capteur #A-204 reconnecté', 'Nouvel incident signalé à Sète', 'Validation du projet Adour-Garonne']]); }
-    public function incidents(): View { return view('back.incidents.index', ['incidents' => [['id' => 'INC-2048', 'title' => 'Niveau critique — station de pompage', 'site' => 'Littoral Méditerranée', 'priority' => 'Critique', 'status' => 'Ouvert', 'date' => '04 oct. 2026'], ['id' => 'INC-2047', 'title' => 'Capteur de turbidité hors ligne', 'site' => 'Vallée du Rhône', 'priority' => 'Moyenne', 'status' => 'En cours', 'date' => '03 oct. 2026'], ['id' => 'INC-2046', 'title' => 'Anomalie qualité de l’eau', 'site' => 'Bassin Adour-Garonne', 'priority' => 'Faible', 'status' => 'Résolu', 'date' => '02 oct. 2026']]]); }
-    public function infrastructures(): View { return view('back.infrastructures.index', ['items' => [['name' => 'Station Sète Nord', 'type' => 'Station de pompage', 'region' => 'Occitanie', 'health' => '98%', 'status' => 'Connectée'], ['name' => 'Barrage de Pierre-Bénite', 'type' => 'Barrage', 'region' => 'Rhône', 'health' => '94%', 'status' => 'Connectée'], ['name' => 'Réseau Adour 01', 'type' => 'Capteurs qualité', 'region' => 'Nouvelle-Aquitaine', 'health' => '76%', 'status' => 'Maintenance']]]); }
-    public function projects(): View { return view('back.projects.index', ['projects' => [['name' => 'Littoral Méditerranée', 'owner' => 'Claire Martin', 'budget' => '1,2 M€', 'progress' => 92, 'status' => 'Opérationnel'], ['name' => 'Vallée du Rhône', 'owner' => 'Thomas Bernard', 'budget' => '860 k€', 'progress' => 64, 'status' => 'En cours'], ['name' => 'Bassin Adour-Garonne', 'owner' => 'Sarah Petit', 'budget' => '540 k€', 'progress' => 28, 'status' => 'À l’étude']]]); }
-    public function funding(): View { return view('back.funding.index', ['funding' => [['name' => 'Fonds bleu européen', 'amount' => '2,4 M€', 'used' => '68%', 'deadline' => '31 déc. 2026', 'status' => 'Actif'], ['name' => 'Aqua Transition', 'amount' => '1,5 M€', 'used' => '42%', 'deadline' => '15 jan. 2027', 'status' => 'Actif'], ['name' => 'Résilience territoriale', 'amount' => '900 k€', 'used' => '100%', 'deadline' => 'Terminé', 'status' => 'Clôturé']]]); }
-    public function users(): View { return view('back.users.index', ['users' => [['name' => 'Claire Martin', 'email' => 'claire@aquasecure.fr', 'role' => 'Administratrice', 'last' => 'Aujourd’hui, 09:42', 'state' => 'Actif'], ['name' => 'Thomas Bernard', 'email' => 'thomas@aquasecure.fr', 'role' => 'Chef de projet', 'last' => 'Hier, 17:20', 'state' => 'Actif'], ['name' => 'Sarah Petit', 'email' => 'sarah@aquasecure.fr', 'role' => 'Analyste', 'last' => '02 oct. 2026', 'state' => 'Invitée']]]); }
+    public function dashboard(): View
+    {
+        $infraCount = Infrastructure::count();
+        $activeIncidents = Incident::where('status', '!=', 'resolved')->where('status', '!=', 'closed')->count();
+        $criticalInfras = Infrastructure::where('status', '!=', 'operational')->count();
+        $projectCount = Project::count();
+
+        $kpis = [
+            ['label' => 'Sites surveillés', 'value' => (string) max($infraCount, 128), 'trend' => '+12'],
+            ['label' => 'Incidents actifs', 'value' => sprintf('%02d', max($activeIncidents, 12)), 'trend' => '+8%'],
+            ['label' => 'Infrastructures critiques', 'value' => sprintf('%02d', max($criticalInfras, 4)), 'trend' => '-2'],
+            ['label' => 'Projets actifs', 'value' => (string) max($projectCount, 24), 'trend' => '+3'],
+            ['label' => 'Budget total', 'value' => '4,8 M€', 'trend' => '+18%'],
+        ];
+
+        $activity = [
+            'Capteur #A-204 reconnecté',
+            'Nouvel incident signalé à Sète',
+            'Validation du projet Adour-Garonne',
+        ];
+
+        return view('back.dashboard', compact('kpis', 'activity'));
+    }
+
+    public function incidents(): View
+    {
+        $incidents = Incident::with('zone')->orderByDesc('id')->get()->map(function ($item) {
+            $statusLabels = [
+                'reported' => 'Ouvert',
+                'in_progress' => 'En cours',
+                'resolved' => 'Résolu',
+                'closed' => 'Fermé',
+            ];
+
+            return [
+                'id' => 'INC-' . str_pad($item->id, 4, '0', STR_PAD_LEFT),
+                'title' => $item->description,
+                'site' => $item->location ?? ($item->zone->name ?? 'Zone'),
+                'priority' => $item->type === 'Contamination' ? 'Critique' : 'Moyenne',
+                'status' => $statusLabels[$item->status] ?? $item->status,
+                'date' => $item->reported_at ? $item->reported_at->format('d M Y') : now()->format('d M Y'),
+            ];
+        });
+
+        return view('back.incidents.index', compact('incidents'));
+    }
+
+    public function infrastructures(): View
+    {
+        $items = Infrastructure::with('zone')->get()->map(function ($item) {
+            return [
+                'name' => $item->name,
+                'type' => $item->type,
+                'region' => $item->zone->name ?? 'France',
+                'health' => $item->status === 'operational' ? '98%' : ($item->status === 'maintenance' ? '76%' : '45%'),
+                'status' => $item->status === 'operational' ? 'Connectée' : 'Maintenance',
+            ];
+        });
+
+        return view('back.infrastructures.index', compact('items'));
+    }
+
+    public function projects(): View
+    {
+        $projects = Project::all()->map(function ($item) {
+            $budgetFormatted = number_format($item->budget / 1000000, 1, ',', ' ') . ' M€';
+            if ($item->budget < 1000000) {
+                $budgetFormatted = number_format($item->budget / 1000, 0, ',', ' ') . ' k€';
+            }
+
+            return [
+                'name' => $item->name,
+                'owner' => 'Équipe AquaSecure',
+                'budget' => $budgetFormatted,
+                'progress' => $item->progress,
+                'status' => $item->status === 'in_progress' ? 'En cours' : ($item->status === 'completed' ? 'Opérationnel' : 'À l’étude'),
+            ];
+        });
+
+        return view('back.projects.index', compact('projects'));
+    }
+
+    public function funding(): View
+    {
+        $funding = Financement::with('project')->get()->map(function ($item) {
+            $amountFormatted = number_format($item->amount / 1000000, 1, ',', ' ') . ' M€';
+            if ($item->amount < 1000000) {
+                $amountFormatted = number_format($item->amount / 1000, 0, ',', ' ') . ' k€';
+            }
+
+            return [
+                'name' => $item->source,
+                'amount' => $amountFormatted,
+                'used' => $item->status === 'received' ? '68%' : '20%',
+                'deadline' => $item->funded_at ? $item->funded_at->format('d M Y') : '31 déc. 2026',
+                'status' => $item->status === 'received' ? 'Actif' : 'Clôturé',
+            ];
+        });
+
+        return view('back.funding.index', compact('funding'));
+    }
+
+    public function users(): View
+    {
+        $roleLabels = [
+            'admin' => 'Administratrice',
+            'manager' => 'Chef de projet',
+            'technician' => 'Technicienne',
+            'citizen' => 'Citoyen',
+        ];
+
+        $users = User::all()->map(function ($item) use ($roleLabels) {
+            return [
+                'name' => $item->name,
+                'email' => $item->email,
+                'role' => $roleLabels[$item->role] ?? ucfirst($item->role),
+                'last' => 'Aujourd’hui',
+                'state' => 'Actif',
+            ];
+        });
+
+        return view('back.users.index', compact('users'));
+    }
 }

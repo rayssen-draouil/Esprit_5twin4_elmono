@@ -3,13 +3,26 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\Financement;
+use App\Models\Incident;
+use App\Models\Infrastructure;
+use App\Models\Project;
+use App\Models\Zone;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class FrontController extends Controller
 {
     private function shared(): array
     {
-        return ['stats' => ['Sites sécurisés' => '128', 'Alertes traitées' => '2 480', 'Communes partenaires' => '34']];
+        return [
+            'stats' => [
+                'Sites sécurisés' => (string) max(Infrastructure::count(), 128),
+                'Alertes traitées' => (string) max(Incident::count() * 120, 2480),
+                'Communes partenaires' => (string) max(Zone::count() * 11, 34),
+            ]
+        ];
     }
 
     public function home(): View
@@ -26,41 +39,183 @@ class FrontController extends Controller
             'infrastructures' => $this->infrastructureData(),
         ]);
     }
-    public function about(): View { return view('front.about', $this->shared()); }
-    public function services(): View { return view('front.services', $this->shared()); }
-    public function projects(): View { return view('front.projects.index', $this->shared() + ['projects' => $this->projectsData()]); }
-    public function funding(): View { return view('front.funding', $this->shared() + ['programs' => ['Fonds bleu européen', 'Aqua Transition', 'Résilience territoriale']]); }
-    public function news(): View { return view('front.news', $this->shared() + ['articles' => ['AquaSecure déploie son réseau de capteurs nouvelle génération', 'Un nouveau partenariat pour protéger nos littoraux', 'Bilan de la saison hydrologique 2025']]); }
-    public function contact(): View { return view('front.contact', $this->shared()); }
-    public function incidents(): View { return view('front.incidents.index', $this->shared() + ['incidents' => $this->incidentsData()]); }
-    public function createIncident(): View { return view('front.incidents.create', $this->shared()); }
-    public function showIncident(string $incident): View { return view('front.incidents.show', $this->shared() + ['incident' => $this->incidentsData()[0], 'incidentCode' => $incident]); }
-    public function infrastructures(): View { return view('front.infrastructures.index', $this->shared() + ['infrastructures' => $this->infrastructureData()]); }
-    public function showInfrastructure(string $infrastructure): View { return view('front.infrastructures.show', $this->shared() + ['infrastructure' => $this->infrastructureData()[0], 'infrastructureCode' => $infrastructure]); }
-    public function showProject(string $project): View { return view('front.projects.show', $this->shared() + ['project' => $this->projectsData()[0], 'projectCode' => $project]); }
+
+    public function about(): View
+    {
+        return view('front.about', $this->shared());
+    }
+
+    public function services(): View
+    {
+        return view('front.services', $this->shared());
+    }
+
+    public function projects(): View
+    {
+        return view('front.projects.index', $this->shared() + ['projects' => $this->projectsData()]);
+    }
+
+    public function funding(): View
+    {
+        $programs = Financement::pluck('source')->unique()->toArray();
+        if (empty($programs)) {
+            $programs = ['Fonds bleu européen', 'Aqua Transition', 'Résilience territoriale'];
+        }
+        return view('front.funding', $this->shared() + ['programs' => $programs]);
+    }
+
+    public function news(): View
+    {
+        return view('front.news', $this->shared() + [
+            'articles' => [
+                'AquaSecure déploie son réseau de capteurs nouvelle génération',
+                'Un nouveau partenariat pour protéger nos littoraux',
+                'Bilan de la saison hydrologique 2025'
+            ]
+        ]);
+    }
+
+    public function contact(): View
+    {
+        return view('front.contact', $this->shared());
+    }
+
+    public function incidents(): View
+    {
+        return view('front.incidents.index', $this->shared() + ['incidents' => $this->incidentsData()]);
+    }
+
+    public function createIncident(): View
+    {
+        $zones = Zone::all();
+        $infrastructures = Infrastructure::all();
+        return view('front.incidents.create', $this->shared() + compact('zones', 'infrastructures'));
+    }
+
+    public function storeIncident(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'type' => 'required|string|max:100',
+            'title' => 'nullable|string|max:255',
+            'description' => 'required|string',
+            'location' => 'required|string|max:255',
+            'priority' => 'nullable|string|max:50',
+            'zone_id' => 'nullable|exists:zones,id',
+            'infrastructure_id' => 'nullable|exists:infrastructures,id',
+            'incident_date' => 'nullable|date',
+            'photo' => 'nullable|image|max:4096',
+        ]);
+
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('incidents', 'public');
+        }
+
+        $zone = null;
+        if (!empty($validated['zone_id'])) {
+            $zone = Zone::find($validated['zone_id']);
+        }
+        if (!$zone) {
+            $zone = Zone::firstOrCreate(
+                ['name' => 'Secteur Local'],
+                ['address' => $validated['location'], 'risk_level' => 'medium']
+            );
+        }
+
+        Incident::create([
+            'zone_id' => $zone->id,
+            'infrastructure_id' => $validated['infrastructure_id'] ?? null,
+            'type' => $validated['type'],
+            'description' => $validated['description'] . (!empty($validated['title']) ? ' — ' . $validated['title'] : ''),
+            'status' => 'reported',
+            'location' => $validated['location'],
+            'photo_path' => $photoPath,
+            'reported_at' => !empty($validated['incident_date']) ? $validated['incident_date'] : now(),
+        ]);
+
+        return redirect()->route('front.incidents.index')->with('success', 'Incident signalé avec succès.');
+    }
+
+    public function showIncident(string $incident): View
+    {
+        $record = Incident::with(['zone', 'infrastructure'])->find($incident);
+        $incidentData = $record ? [
+            'id' => 'INC-' . str_pad($record->id, 4, '0', STR_PAD_LEFT),
+            'title' => $record->description,
+            'site' => $record->location ?? ($record->zone->name ?? 'Site non défini'),
+            'priority' => 'Moyenne',
+            'status' => $record->status === 'reported' ? 'Ouvert' : ($record->status === 'in_progress' ? 'En cours' : 'Résolu'),
+            'date' => $record->reported_at ? $record->reported_at->format('d M Y') : now()->format('d M Y'),
+            'description' => $record->description,
+        ] : ($this->incidentsData()[0] ?? []);
+
+        return view('front.incidents.show', $this->shared() + ['incident' => $incidentData, 'incidentCode' => $incident]);
+    }
+
+    public function infrastructures(): View
+    {
+        return view('front.infrastructures.index', $this->shared() + ['infrastructures' => $this->infrastructureData()]);
+    }
+
+    public function showInfrastructure(string $infrastructure): View
+    {
+        $record = Infrastructure::with('zone')->where('id', $infrastructure)->orWhere('name', $infrastructure)->first();
+        $infraData = $record ? [
+            'name' => $record->name,
+            'type' => $record->type,
+            'region' => $record->zone->name ?? 'France',
+            'health' => $record->status === 'operational' ? '98%' : ($record->status === 'maintenance' ? '76%' : '45%'),
+            'status' => $record->status === 'operational' ? 'Connectée' : 'Maintenance',
+        ] : ($this->infrastructureData()[0] ?? []);
+
+        return view('front.infrastructures.show', $this->shared() + ['infrastructure' => $infraData, 'infrastructureCode' => $infrastructure]);
+    }
+
+    public function showProject(string $project): View
+    {
+        $record = Project::where('id', $project)->orWhere('name', $project)->first();
+        $projData = $record ? [
+            'name' => $record->name,
+            'location' => 'Territoire national',
+            'status' => $record->status === 'in_progress' ? 'En cours' : ($record->status === 'completed' ? 'Opérationnel' : 'À l’étude'),
+            'progress' => $record->progress,
+            'type' => $record->type,
+        ] : ($this->projectsData()[0] ?? []);
+
+        return view('front.projects.show', $this->shared() + ['project' => $projData, 'projectCode' => $project]);
+    }
 
     private function projectsData(): array
     {
-        return [
-            ['name' => 'Littoral Méditerranée', 'location' => 'Occitanie', 'status' => 'Opérationnel', 'progress' => 92, 'type' => 'Surveillance côtière'],
-            ['name' => 'Vallée du Rhône', 'location' => 'Auvergne-Rhône-Alpes', 'status' => 'En déploiement', 'progress' => 64, 'type' => 'Prévention inondation'],
-            ['name' => 'Bassin Adour-Garonne', 'location' => 'Nouvelle-Aquitaine', 'status' => 'À l’étude', 'progress' => 28, 'type' => 'Qualité de l’eau'],
-        ];
+        return Project::all()->map(fn($p) => [
+            'name' => $p->name,
+            'location' => 'France',
+            'status' => $p->status === 'in_progress' ? 'En déploiement' : ($p->status === 'completed' ? 'Opérationnel' : 'À l’étude'),
+            'progress' => $p->progress,
+            'type' => $p->type,
+        ])->toArray();
     }
 
     private function incidentsData(): array
     {
-        return [
-            ['id' => 'INC-2048', 'title' => 'Niveau critique — station de pompage', 'site' => 'Littoral Méditerranée', 'priority' => 'Critique', 'status' => 'Ouvert', 'date' => '04 oct. 2026'],
-            ['id' => 'INC-2047', 'title' => 'Capteur de turbidité hors ligne', 'site' => 'Vallée du Rhône', 'priority' => 'Moyenne', 'status' => 'En cours', 'date' => '03 oct. 2026'],
-        ];
+        return Incident::with('zone')->orderByDesc('id')->get()->map(fn($i) => [
+            'id' => 'INC-' . str_pad($i->id, 4, '0', STR_PAD_LEFT),
+            'title' => $i->description,
+            'site' => $i->location ?? ($i->zone->name ?? 'Zone'),
+            'priority' => 'Critique',
+            'status' => $i->status === 'reported' ? 'Ouvert' : ($i->status === 'in_progress' ? 'En cours' : 'Résolu'),
+            'date' => $i->reported_at ? $i->reported_at->format('d M Y') : now()->format('d M Y'),
+        ])->toArray();
     }
 
     private function infrastructureData(): array
     {
-        return [
-            ['name' => 'Station Sète Nord', 'type' => 'Station de pompage', 'region' => 'Occitanie', 'health' => '98%', 'status' => 'Connectée'],
-            ['name' => 'Barrage de Pierre-Bénite', 'type' => 'Barrage', 'region' => 'Rhône', 'health' => '94%', 'status' => 'Connectée'],
-        ];
+        return Infrastructure::with('zone')->get()->map(fn($inf) => [
+            'name' => $inf->name,
+            'type' => $inf->type,
+            'region' => $inf->zone->name ?? 'France',
+            'health' => $inf->status === 'operational' ? '98%' : '76%',
+            'status' => $inf->status === 'operational' ? 'Connectée' : 'Maintenance',
+        ])->toArray();
     }
 }
