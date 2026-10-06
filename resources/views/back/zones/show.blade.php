@@ -26,10 +26,12 @@
 </section>
 
 <section class="panel" style="margin-bottom:20px">
-    <div class="panel-heading"><h2>Alertes ({{ $zone->alerts->count() }})</h2></div>
-    <ul class="activity-list">
-        @forelse($zone->alerts as $alert)
-            <li><span class="activity-dot"></span><span><strong>{{ $alert->type }} · {{ $alert->severity }}</strong><small>{{ $alert->message }} — {{ $alert->created_at->diffForHumans() }}</small></span></li>
+        <div class="panel-heading"><h2>Alertes ({{ $zone->alerts->count() }})</h2>
+            <x-ui.button :href="route('back.alerts.create', ['zone_id' => $zone->id])" variant="outline">+ Ajouter une alerte</x-ui.button>
+        </div>
+        <ul class="activity-list">
+            @forelse($zone->alerts as $alert)
+                <li><span class="activity-dot"></span><span><strong><a href="{{ route('back.alerts.show', $alert) }}">{{ $alert->type }}</a> · {{ $alert->severity_label }}</strong><small>{{ $alert->message }} — {{ $alert->created_at->diffForHumans() }}</small></span></li>
         @empty
             <li>Aucune alerte.</li>
         @endforelse
