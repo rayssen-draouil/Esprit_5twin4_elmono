@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Back\BackController;
+use App\Http\Controllers\FinancementController;
 use App\Http\Controllers\Front\FrontController;
+use App\Http\Controllers\ProjectController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [FrontController::class, 'home'])->name('home');
@@ -31,7 +33,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [BackController::class, 'dashboard'])->name('dashboard');
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents.index');
     Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures.index');
-    Route::get('/projects', [BackController::class, 'projects'])->name('projects.index');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding.index');
     Route::get('/users', [BackController::class, 'users'])->name('users.index');
+});
+
+Route::prefix('admin')->group(function () {
+    Route::resource('projects', ProjectController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->names('projects');
+
+    Route::resource('financements', FinancementController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->names('financements');
 });
