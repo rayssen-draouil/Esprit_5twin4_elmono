@@ -1,0 +1,2 @@
+@extends('layouts.back')
+@section('content')<div class="content-heading"><div><span class="eyebrow">ESPACE CITOYEN</span><h1>Bonjour {{ Auth::user()->name }}</h1><p>Merci de contribuer à la surveillance de l’eau.</p></div></div><section class="panel" style="padding:28px"><h2>Bienvenue sur AquaSecure</h2><p>Consultez les informations publiques et signalez un incident depuis le site.</p><a class="button" href="{{ route('front.incidents.create') }}">Signaler un incident</a></section>@endsection
