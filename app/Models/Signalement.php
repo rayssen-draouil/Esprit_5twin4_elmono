@@ -6,37 +6,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Intervention extends Model
+class Signalement extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'incident_id',
-        'technician_id',
-        'team',
-        'scheduled_at',
+        'reporter_name',
+        'reporter_email',
+        'description',
         'status',
-        'result',
-        'started_at',
-        'completed_at',
+        'reported_at',
     ];
 
     protected function casts(): array
     {
         return [
-            'scheduled_at' => 'datetime',
-            'started_at' => 'datetime',
-            'completed_at' => 'datetime',
+            'reported_at' => 'datetime',
         ];
     }
 
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
-    }
-
-    public function technician(): BelongsTo
-    {
-        return $this->belongsTo(Technicien::class, 'technician_id');
     }
 }

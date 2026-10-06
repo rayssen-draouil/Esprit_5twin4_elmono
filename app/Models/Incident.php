@@ -46,6 +46,11 @@ class Incident extends Model
         return $this->hasMany(Intervention::class);
     }
 
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class);
+    }
+
     public function alerts(): HasMany
     {
         return $this->hasMany(Alert::class);
