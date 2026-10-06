@@ -11,6 +11,13 @@
         <div class="kpi"><span>{{ $kpi['label'] }}</span><strong>{{ $kpi['value'] }}</strong><small class="positive">↗ {{ $kpi['trend'] }} <i>vs. mois dernier</i></small></div>
     @endforeach
 </div>
+<div class="kpi-grid project-kpis">
+    <div class="kpi"><span>Total projets</span><strong>{{ $projectStats['total'] }}</strong></div>
+    <div class="kpi"><span>Projets en cours</span><strong>{{ $projectStats['in_progress'] }}</strong></div>
+    <div class="kpi"><span>Projets terminés</span><strong>{{ $projectStats['completed'] }}</strong></div>
+    <div class="kpi"><span>Total financements</span><strong>{{ number_format($projectStats['funding'], 0, ',', ' ') }} €</strong></div>
+    <div class="kpi"><span>Reste à financer</span><strong>{{ number_format($projectStats['remaining'], 0, ',', ' ') }} €</strong></div>
+</div>
 
 <div class="dashboard-grid">
     <section class="panel chart-panel">

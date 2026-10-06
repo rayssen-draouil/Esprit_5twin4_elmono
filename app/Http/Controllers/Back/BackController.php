@@ -17,14 +17,18 @@ class BackController extends Controller
         $infraCount = Infrastructure::count();
         $activeIncidents = Incident::where('status', '!=', 'resolved')->where('status', '!=', 'closed')->count();
         $criticalInfras = Infrastructure::where('status', '!=', 'operational')->count();
+        $budgetTotal = (float) Project::sum('budget');
+        $fundingTotal = (float) Financement::sum('amount');
         $projectCount = Project::count();
+        $inProgressProjects = Project::where('status', 'in_progress')->count();
+        $completedProjects = Project::where('status', 'completed')->count();
 
         $kpis = [
-            ['label' => 'Sites surveillés', 'value' => (string) max($infraCount, 128), 'trend' => '+12'],
-            ['label' => 'Incidents actifs', 'value' => sprintf('%02d', max($activeIncidents, 12)), 'trend' => '+8%'],
-            ['label' => 'Infrastructures critiques', 'value' => sprintf('%02d', max($criticalInfras, 4)), 'trend' => '-2'],
-            ['label' => 'Projets actifs', 'value' => (string) max($projectCount, 24), 'trend' => '+3'],
-            ['label' => 'Budget total', 'value' => '4,8 M€', 'trend' => '+18%'],
+            ['label' => 'Sites surveillés', 'value' => (string) $infraCount, 'trend' => 'Données réelles'],
+            ['label' => 'Incidents actifs', 'value' => sprintf('%02d', $activeIncidents), 'trend' => 'Données réelles'],
+            ['label' => 'Infrastructures critiques', 'value' => sprintf('%02d', $criticalInfras), 'trend' => 'Données réelles'],
+            ['label' => 'Projets actifs', 'value' => (string) $inProgressProjects, 'trend' => 'Données réelles'],
+            ['label' => 'Budget total', 'value' => number_format($budgetTotal, 0, ',', ' ') . ' €', 'trend' => number_format($fundingTotal, 0, ',', ' ') . ' € financés'],
         ];
 
         $activity = [
@@ -33,7 +37,16 @@ class BackController extends Controller
             'Validation du projet Adour-Garonne',
         ];
 
-        return view('back.dashboard', compact('kpis', 'activity'));
+        $projectStats = [
+            'total' => $projectCount,
+            'in_progress' => $inProgressProjects,
+            'completed' => $completedProjects,
+            'budget' => $budgetTotal,
+            'funding' => $fundingTotal,
+            'remaining' => max(0, $budgetTotal - $fundingTotal),
+        ];
+
+        return view('back.dashboard', compact('kpis', 'activity', 'projectStats'));
     }
 
     public function incidents(): View
