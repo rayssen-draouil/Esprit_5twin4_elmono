@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Back\BackController;
+use App\Http\Controllers\Back\ZoneController;
 use App\Http\Controllers\Front\FrontController;
 use Illuminate\Support\Facades\Route;
 
@@ -25,6 +26,7 @@ Route::prefix('back')->name('back.')->group(function () {
     Route::get('/projects', [BackController::class, 'projects'])->name('projects');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding');
     Route::get('/users', [BackController::class, 'users'])->name('users');
+    Route::resource('zones', ZoneController::class);
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
