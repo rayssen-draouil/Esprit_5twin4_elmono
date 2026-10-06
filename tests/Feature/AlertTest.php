@@ -137,6 +137,24 @@ class AlertTest extends TestCase
         $this->assertSame(1, $zone->alerts()->count());
     }
 
+    public function test_front_alerts_page_loads_with_alert_data(): void
+    {
+        Alert::factory()->create([
+            'type' => 'Fuite',
+            'message' => 'Fuite majeure signalée sur le front.',
+        ]);
+
+        $response = $this->get('/alerts');
+
+        $response->assertOk()
+            ->assertSee('Fuite')
+            ->assertSee('Fuite majeure signalée sur le front.')
+            ->assertSee('Gravité');
+
+        $alias = $this->get('/alertes');
+        $alias->assertOk()->assertSee('Fuite majeure signalée sur le front.');
+    }
+
     public function test_alerts_are_observable_when_incident_is_created(): void
     {
         $zone = Zone::factory()->create(['risk_level' => 'low']);

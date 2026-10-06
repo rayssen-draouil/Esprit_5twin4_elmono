@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alert;
 use App\Models\Financement;
 use App\Models\Incident;
 use App\Models\Infrastructure;
@@ -96,6 +97,24 @@ class FrontController extends Controller
             ])->toArray();
 
         return view('front.zones.index', $this->shared() + ['zones' => $zones]);
+    }
+
+    public function alerts(): View
+    {
+        $alerts = Alert::with(['zone', 'incident'])
+            ->latest()
+            ->get()
+            ->map(fn($a) => [
+                'type' => $a->type,
+                'message' => $a->message,
+                'zone' => $a->zone->name ?? 'Zone non définie',
+                'severity' => $a->severity_label,
+                'severityLevel' => $a->severity,
+                'status' => $a->read_at ? 'Lue' : 'Non lue',
+                'date' => $a->created_at?->format('d M Y H:i'),
+            ])->toArray();
+
+        return view('front.alerts.index', $this->shared() + ['alerts' => $alerts]);
     }
 
     public function incidents(): View
