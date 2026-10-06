@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Back\AlertController;
 use App\Http\Controllers\Back\BackController;
 use App\Http\Controllers\Back\ZoneController;
 use App\Http\Controllers\Front\FrontController;
@@ -28,6 +29,7 @@ Route::prefix('back')->name('back.')->group(function () {
     Route::get('/funding', [BackController::class, 'funding'])->name('funding');
     Route::get('/users', [BackController::class, 'users'])->name('users');
     Route::resource('zones', ZoneController::class);
+    Route::resource('alerts', AlertController::class);
 });
 
 Route::prefix('admin')->name('admin.')->group(function () {
