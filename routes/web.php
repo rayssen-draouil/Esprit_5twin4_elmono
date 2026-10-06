@@ -1,10 +1,29 @@
 <?php
 
 use App\Http\Controllers\Back\BackController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinancementController;
 use App\Http\Controllers\Front\FrontController;
 use App\Http\Controllers\ProjectController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.store');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
+});
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', [DashboardController::class, 'redirect'])->name('dashboard');
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/dashboard/manager', [DashboardController::class, 'manager'])->middleware('role:manager,gestionnaire')->name('manager.dashboard');
+    Route::get('/dashboard/citizen', [DashboardController::class, 'citizen'])->middleware('role:citizen,citoyen')->name('citizen.dashboard');
+});
 
 Route::get('/', [FrontController::class, 'home'])->name('home');
 Route::get('/about', [FrontController::class, 'about'])->name('front.about');
@@ -20,7 +39,7 @@ Route::get('/funding', [FrontController::class, 'funding'])->name('front.funding
 Route::get('/news', [FrontController::class, 'news'])->name('front.news');
 Route::get('/contact', [FrontController::class, 'contact'])->name('front.contact');
 
-Route::prefix('back')->name('back.')->group(function () {
+Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('back')->name('back.')->group(function () {
     Route::get('/', [BackController::class, 'dashboard'])->name('dashboard');
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents');
     Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures');
@@ -29,15 +48,18 @@ Route::prefix('back')->name('back.')->group(function () {
     Route::get('/users', [BackController::class, 'users'])->name('users');
 });
 
-Route::prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [BackController::class, 'dashboard'])->name('dashboard');
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents.index');
     Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures.index');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding.index');
-    Route::get('/users', [BackController::class, 'users'])->name('users.index');
 });
 
-Route::prefix('admin')->group(function () {
+Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
+    Route::resource('users', UserController::class)->names('admin.users');
+});
+
+Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('admin')->group(function () {
     Route::resource('projects', ProjectController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
         ->names('projects');
