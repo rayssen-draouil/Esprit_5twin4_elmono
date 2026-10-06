@@ -80,6 +80,24 @@ class FrontController extends Controller
         return view('front.contact', $this->shared());
     }
 
+    public function zones(): View
+    {
+        $zones = Zone::withCount(['infrastructures', 'incidents'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn($z) => [
+                'name' => $z->name,
+                'address' => $z->address,
+                'description' => $z->description,
+                'risk' => $z->risk_label,
+                'riskLevel' => $z->risk_level,
+                'infrastructures' => $z->infrastructures_count,
+                'incidents' => $z->incidents_count,
+            ])->toArray();
+
+        return view('front.zones.index', $this->shared() + ['zones' => $zones]);
+    }
+
     public function incidents(): View
     {
         return view('front.incidents.index', $this->shared() + ['incidents' => $this->incidentsData()]);

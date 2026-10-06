@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [FrontController::class, 'home'])->name('home');
 Route::get('/about', [FrontController::class, 'about'])->name('front.about');
 Route::get('/services', [FrontController::class, 'services'])->name('front.services');
+Route::get('/zones', [FrontController::class, 'zones'])->name('front.zones.index');
 Route::get('/incidents', [FrontController::class, 'incidents'])->name('front.incidents.index');
 Route::get('/incidents/create', [FrontController::class, 'createIncident'])->name('front.incidents.create');
 Route::get('/incidents/{incident}', [FrontController::class, 'showIncident'])->name('front.incidents.show');

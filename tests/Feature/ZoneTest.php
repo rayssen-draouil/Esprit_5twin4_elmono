@@ -36,6 +36,21 @@ class ZoneTest extends TestCase
         $filtered->assertOk()->assertSee('Zone Littoral')->assertDontSee('Zone Montagne');
     }
 
+    public function test_front_zones_page_loads_with_zone_data(): void
+    {
+        Zone::factory()->create([
+            'name' => 'Zone Front Test',
+            'risk_level' => 'high',
+        ]);
+
+        $response = $this->get('/zones');
+
+        $response->assertOk()
+            ->assertSee('Zone Front Test')
+            ->assertSee('Élevé')
+            ->assertSee('incident(s)');
+    }
+
     public function test_create_show_and_edit_pages_render(): void
     {
         $zone = Zone::factory()->create();
