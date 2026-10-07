@@ -28,9 +28,12 @@ Route::middleware('auth')->group(function () {
 Route::get('/', [FrontController::class, 'home'])->name('home');
 Route::get('/about', [FrontController::class, 'about'])->name('front.about');
 Route::get('/services', [FrontController::class, 'services'])->name('front.services');
-Route::get('/incidents', [FrontController::class, 'incidents'])->name('front.incidents.index');
-Route::get('/incidents/create', [FrontController::class, 'createIncident'])->name('front.incidents.create');
-Route::get('/incidents/{incident}', [FrontController::class, 'showIncident'])->name('front.incidents.show');
+Route::middleware('auth')->group(function () {
+    Route::get('/incidents', [FrontController::class, 'incidents'])->name('front.incidents.index');
+    Route::get('/incidents/create', [FrontController::class, 'createIncident'])->name('front.incidents.create');
+    Route::post('/incidents', [FrontController::class, 'storeIncident'])->name('front.incidents.store');
+    Route::get('/incidents/{incident}', [FrontController::class, 'showIncident'])->name('front.incidents.show');
+});
 Route::get('/infrastructures', [FrontController::class, 'infrastructures'])->name('front.infrastructures.index');
 Route::get('/infrastructures/{infrastructure}', [FrontController::class, 'showInfrastructure'])->name('front.infrastructures.show');
 Route::get('/projects', [FrontController::class, 'projects'])->name('front.projects.index');
@@ -42,6 +45,7 @@ Route::get('/contact', [FrontController::class, 'contact'])->name('front.contact
 Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('back')->name('back.')->group(function () {
     Route::get('/', [BackController::class, 'dashboard'])->name('dashboard');
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents');
+    Route::post('/signalements/{signalement}/confirm', [BackController::class, 'confirmSignalement'])->name('signalements.confirm');
     Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures');
     Route::get('/projects', [BackController::class, 'projects'])->name('projects');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding');
@@ -53,6 +57,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->grou
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents.index');
     Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures.index');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding.index');
+    Route::patch('/signalements/{signalement}', [BackController::class, 'updateSignalement'])->name('signalements.update');
+    Route::delete('/signalements/{signalement}', [BackController::class, 'destroySignalement'])->name('signalements.destroy');
+    Route::patch('/incidents/{incident}', [BackController::class, 'updateIncident'])->name('incidents.update');
+    Route::delete('/incidents/{incident}', [BackController::class, 'destroyIncident'])->name('incidents.destroy');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {

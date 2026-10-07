@@ -12,9 +12,14 @@ class Signalement extends Model
 
     protected $fillable = [
         'incident_id',
+        'user_id',
         'reporter_name',
         'reporter_email',
+        'type',
         'description',
+        'location',
+        'photo_path',
+        'priority',
         'status',
         'reported_at',
     ];
@@ -29,5 +34,10 @@ class Signalement extends Model
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
+    }
+
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
     }
 }

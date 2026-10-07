@@ -15,6 +15,7 @@ class Incident extends Model
         'zone_id',
         'infrastructure_id',
         'type',
+        'severity',
         'status',
         'description',
         'location',

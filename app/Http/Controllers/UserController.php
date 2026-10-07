@@ -38,6 +38,12 @@ class UserController extends Controller
     public function update(UpdateUserRequest $request, User $user): RedirectResponse
     {
         $data = $request->safe()->except(['password_confirmation', 'password']);
+        if ($request->user()->is($user) && $request->role !== 'admin') {
+            return back()->withErrors(['role' => 'Vous ne pouvez pas retirer votre propre rôle administrateur.'])->withInput();
+        }
+        if ($user->role === 'admin' && $request->role !== 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return back()->withErrors(['role' => 'Le dernier administrateur doit conserver son rôle.'])->withInput();
+        }
         if ($request->filled('password')) $data['password'] = Hash::make($request->password);
         $user->update($data);
         return redirect()->route('admin.users.index')->with('success', 'Utilisateur mis à jour.');

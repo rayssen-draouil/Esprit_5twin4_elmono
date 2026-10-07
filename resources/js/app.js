@@ -3,6 +3,11 @@ import './bootstrap';
 document.querySelector('.menu-toggle')?.addEventListener('click', () => {
     document.querySelector('.site-header nav')?.classList.toggle('mobile-open');
 });
+document.querySelector('#incident-photo')?.addEventListener('change', (event) => {
+    const input = event.currentTarget;
+    const fileName = document.querySelector('.file-name');
+    if (fileName) fileName.textContent = input.files?.[0]?.name ?? 'Aucun fichier sélectionné';
+});
 document.querySelector('.mobile-sidebar')?.addEventListener('click', () => {
     const sidebar = document.querySelector('.sidebar');
     const main = document.querySelector('.back-main');
