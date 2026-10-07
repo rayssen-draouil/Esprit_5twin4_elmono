@@ -15,6 +15,7 @@ class Incident extends Model
         'zone_id',
         'infrastructure_id',
         'type',
+        'severity',
         'status',
         'description',
         'location',
@@ -44,6 +45,11 @@ class Incident extends Model
     public function interventions(): HasMany
     {
         return $this->hasMany(Intervention::class);
+    }
+
+    public function signalements(): HasMany
+    {
+        return $this->hasMany(Signalement::class);
     }
 
     public function alerts(): HasMany

@@ -1,1 +1,24 @@
-@extends('layouts.front') @section('content')<section class="page-hero compact"><span class="eyebrow">{{ $incidentCode }}</span><h1>{{ $incident['title'] }}</h1><p>{{ $incident['site'] }} · signalé le {{ $incident['date'] }}</p></section><section class="section two-col"><div><span class="eyebrow">SUIVI DE L'INCIDENT</span><h2>Une équipe est mobilisée.</h2><p class="lead">Nos opérateurs suivent cet événement et coordonnent les actions nécessaires avec le site concerné.</p></div><div class="panel"><p><strong>Priorité</strong><br>{{ $incident['priority'] }}</p><p><strong>Statut</strong><br>{{ $incident['status'] }}</p><p><strong>Dernière mise à jour</strong><br>Il y a 18 minutes</p></div></section>@endsection
+@extends('layouts.front')
+
+@section('content')
+    <section class="page-hero compact">
+        <span class="eyebrow">{{ $incidentCode }}</span>
+        <h1>{{ $incident['title'] }}</h1>
+        <p>{{ $incident['type'] }} · {{ $incident['site'] }} · signalé le {{ $incident['date'] }}</p>
+    </section>
+    <section class="section two-col">
+        <div>
+            <span class="eyebrow">SUIVI DE L'INCIDENT</span>
+            <h2>Une équipe est mobilisée.</h2>
+            <p class="lead">Nos opérateurs suivent cet événement et coordonnent les actions nécessaires avec le site concerné.</p>
+            @if(!empty($incident['photo_path']))
+                <img class="incident-photo-detail" src="{{ asset('storage/'.$incident['photo_path']) }}" alt="Photo de l'incident {{ $incidentCode }}">
+            @endif
+        </div>
+        <div class="panel">
+            <p><strong>Priorité</strong><br>{{ $incident['priority'] }}</p>
+            <p><strong>Statut</strong><br>{{ $incident['status'] }}</p>
+            <p><strong>Dernière mise à jour</strong><br>Il y a 18 minutes</p>
+        </div>
+    </section>
+@endsection

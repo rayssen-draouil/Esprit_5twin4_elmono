@@ -1,1 +1,77 @@
-<aside class="sidebar"><a class="brand" href="{{ route('back.dashboard') }}"><span class="brand-mark">A</span><span>Aqua<span>Secure</span></span></a><p class="sidebar-label">OVERVIEW</p><nav><a class="{{ request()->routeIs('back.dashboard') ? 'active' : '' }}" href="{{ route('back.dashboard') }}">◈ <span>Dashboard</span></a><p class="sidebar-label">MONITORING</p><a class="{{ request()->routeIs('back.incidents') ? 'active' : '' }}" href="{{ route('back.incidents') }}">⚠ <span>Incidents</span><b>12</b></a><a class="{{ request()->routeIs('back.infrastructures') ? 'active' : '' }}" href="{{ route('back.infrastructures') }}">▦ <span>Infrastructures</span></a><p class="sidebar-label">PROJECTS</p><a class="{{ request()->routeIs('back.projects') ? 'active' : '' }}" href="{{ route('back.projects') }}">◫ <span>Projets</span></a><a class="{{ request()->routeIs('back.funding') ? 'active' : '' }}" href="{{ route('back.funding') }}">◒ <span>Financement</span></a><p class="sidebar-label">MANAGEMENT</p><a href="#">♧ <span>Rapports</span></a><a class="{{ request()->routeIs('back.users') ? 'active' : '' }}" href="{{ route('back.users') }}">♙ <span>Utilisateurs</span></a><p class="sidebar-label">SYSTEM</p><a href="#">⚙ <span>Paramètres</span></a></nav><div class="sidebar-bottom"><a href="{{ route('home') }}">↩ <span>Voir le site public</span></a><div class="profile"><span class="avatar">CM</span><span><strong>Claire Martin</strong><small>Administratrice</small></span><span>···</span></div></div></aside>
+<aside class="sidebar">
+    <a class="brand" href="{{ route('dashboard') }}">
+        <span class="brand-mark">A</span>
+        <span>Aqua<span>Secure</span></span>
+    </a>
+
+    <p class="sidebar-label">OVERVIEW</p>
+
+    <nav>
+        <a class="{{ request()->routeIs('dashboard', 'back.dashboard', '*.dashboard') ? 'active' : '' }}"
+           href="{{ route('dashboard') }}">
+            ◈ <span>Dashboard</span>
+        </a>
+
+        @if(in_array(Auth::user()->role, ['admin', 'manager', 'gestionnaire'], true))
+            <p class="sidebar-label">MONITORING</p>
+
+            <a class="{{ request()->routeIs('back.incidents') ? 'active' : '' }}"
+               href="{{ route('back.incidents') }}">
+                ⚠ <span>Incidents</span>
+            </a>
+
+            <a class="{{ request()->routeIs('back.infrastructures') ? 'active' : '' }}"
+               href="{{ route('back.infrastructures') }}">
+                ▦ <span>Infrastructures</span>
+            </a>
+
+            <p class="sidebar-label">PROJECTS</p>
+
+            <a class="{{ request()->routeIs('projects.*') || request()->routeIs('back.projects') ? 'active' : '' }}"
+               href="{{ route('projects.index') }}">
+                ◫ <span>Projets</span>
+            </a>
+
+            <a class="{{ request()->routeIs('financements.*') || request()->routeIs('back.funding') ? 'active' : '' }}"
+               href="{{ route('financements.index') }}">
+                ◒ <span>Financement</span>
+            </a>
+
+            <p class="sidebar-label">MANAGEMENT</p>
+
+            @if(Auth::user()->role === 'admin')
+                <a class="{{ request()->routeIs('admin.users.*') ? 'active' : '' }}"
+                   href="{{ route('admin.users.index') }}">
+                    ♙ <span>Utilisateurs</span>
+                </a>
+            @endif
+        @endif
+    </nav>
+
+    <div class="sidebar-bottom">
+        <a href="{{ route('profile.edit') }}">
+            ◉ <span>Mon profil</span>
+        </a>
+
+        <a href="{{ route('home') }}">
+            ↩ <span>Voir le site public</span>
+        </a>
+
+        <form method="POST" action="{{ route('logout') }}">
+            @csrf
+            <button class="sidebar-logout" type="submit">
+                ⇥ <span>Se déconnecter</span>
+            </button>
+        </form>
+
+        <div class="profile">
+            <span class="avatar">
+                {{ collect(explode(' ', Auth::user()->name))->map(fn ($name) => substr($name, 0, 1))->join('') }}
+            </span>
+            <span>
+                <strong>{{ Auth::user()->name }}</strong>
+                <small>{{ ucfirst(Auth::user()->role) }}</small>
+            </span>
+        </div>
+    </div>
+</aside>

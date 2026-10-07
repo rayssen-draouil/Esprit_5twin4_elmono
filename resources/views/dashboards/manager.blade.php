@@ -1,0 +1,2 @@
+@extends('layouts.back')
+@section('content')<div class="content-heading"><div><span class="eyebrow">ESPACE GESTIONNAIRE</span><h1>Bonjour {{ Auth::user()->name }}</h1><p>Suivez les projets et les opérations AquaSecure.</p></div></div><section class="panel" style="padding:28px"><h2>Votre tableau de bord</h2><p>Les indicateurs et projets qui vous sont attribués seront disponibles ici.</p></section>@endsection

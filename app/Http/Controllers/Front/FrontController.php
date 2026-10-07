@@ -7,6 +7,7 @@ use App\Models\Financement;
 use App\Models\Incident;
 use App\Models\Infrastructure;
 use App\Models\Project;
+use App\Models\Signalement;
 use App\Models\Zone;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -122,34 +123,51 @@ class FrontController extends Controller
             );
         }
 
-        Incident::create([
-            'zone_id' => $zone->id,
-            'infrastructure_id' => $validated['infrastructure_id'] ?? null,
+        Signalement::create([
+            'user_id' => auth()->id(),
+            'reporter_name' => auth()->user()->name,
+            'reporter_email' => auth()->user()->email,
             'type' => $validated['type'],
             'description' => $validated['description'] . (!empty($validated['title']) ? ' — ' . $validated['title'] : ''),
-            'status' => 'reported',
             'location' => $validated['location'],
             'photo_path' => $photoPath,
+            'priority' => $validated['priority'] ?? null,
+            'status' => 'new',
             'reported_at' => !empty($validated['incident_date']) ? $validated['incident_date'] : now(),
         ]);
 
-        return redirect()->route('front.incidents.index')->with('success', 'Incident signalé avec succès.');
+        return redirect()->route('front.incidents.index')->with('success', 'Signalement envoyé. Il sera vérifié par nos équipes.');
     }
 
     public function showIncident(string $incident): View
     {
-        $record = Incident::with(['zone', 'infrastructure'])->find($incident);
-        $incidentData = $record ? [
+        $incidentId = ctype_digit($incident) ? (int) $incident : (int) preg_replace('/\D+/', '', $incident);
+        $record = Incident::with(['zone', 'infrastructure', 'signalements'])
+            ->when(auth()->user()?->role === 'citizen', fn ($query) => $query->whereHas('signalements', fn ($signalements) => $signalements->where('user_id', auth()->id())))
+            ->findOrFail($incidentId);
+        $incidentData = [
             'id' => 'INC-' . str_pad($record->id, 4, '0', STR_PAD_LEFT),
             'title' => $record->description,
             'site' => $record->location ?? ($record->zone->name ?? 'Site non défini'),
-            'priority' => 'Moyenne',
-            'status' => $record->status === 'reported' ? 'Ouvert' : ($record->status === 'in_progress' ? 'En cours' : 'Résolu'),
+            'priority' => match ($record->severity) {
+                'critical' => 'Critique',
+                'high' => 'Élevée',
+                'low' => 'Faible',
+                default => 'Moyenne',
+            },
+            'status' => [
+                'reported' => 'Ouvert',
+                'in_progress' => 'En cours',
+                'resolved' => 'Résolu',
+                'closed' => 'Fermé',
+            ][$record->status] ?? $record->status,
             'date' => $record->reported_at ? $record->reported_at->format('d M Y') : now()->format('d M Y'),
             'description' => $record->description,
-        ] : ($this->incidentsData()[0] ?? []);
+            'photo_path' => $record->photo_path,
+            'type' => $record->type,
+        ];
 
-        return view('front.incidents.show', $this->shared() + ['incident' => $incidentData, 'incidentCode' => $incident]);
+        return view('front.incidents.show', $this->shared() + ['incident' => $incidentData, 'incidentCode' => $incidentData['id']]);
     }
 
     public function infrastructures(): View
@@ -198,7 +216,7 @@ class FrontController extends Controller
 
     private function incidentsData(): array
     {
-        return Incident::with('zone')->orderByDesc('id')->get()->map(fn($i) => [
+        return Incident::with('zone')->when(auth()->user()?->role === 'citizen', fn ($query) => $query->whereHas('signalements', fn ($signalements) => $signalements->where('user_id', auth()->id())))->orderByDesc('id')->get()->map(fn($i) => [
             'id' => 'INC-' . str_pad($i->id, 4, '0', STR_PAD_LEFT),
             'title' => $i->description,
             'site' => $i->location ?? ($i->zone->name ?? 'Zone'),
