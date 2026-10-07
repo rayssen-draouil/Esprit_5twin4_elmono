@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\Back\AlertController;
 use App\Http\Controllers\Back\BackController;
+use App\Http\Controllers\Back\ZoneController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinancementController;
@@ -32,6 +34,9 @@ Route::middleware('auth')->group(function () {
 Route::get('/', [FrontController::class, 'home'])->name('home');
 Route::get('/about', [FrontController::class, 'about'])->name('front.about');
 Route::get('/services', [FrontController::class, 'services'])->name('front.services');
+Route::get('/zones', [FrontController::class, 'zones'])->name('front.zones.index');
+Route::get('/alerts', [FrontController::class, 'alerts'])->name('front.alerts.index');
+Route::get('/alertes', [FrontController::class, 'alerts']);
 Route::middleware('auth')->group(function () {
     Route::get('/incidents', [FrontController::class, 'incidents'])->name('front.incidents.index');
     Route::get('/incidents/create', [FrontController::class, 'createIncident'])->name('front.incidents.create');
@@ -55,6 +60,8 @@ Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('back')->
     Route::get('/projects', [BackController::class, 'projects'])->name('projects');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding');
     Route::get('/users', [BackController::class, 'users'])->name('users');
+    Route::resource('zones', ZoneController::class);
+    Route::resource('alerts', AlertController::class);
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {

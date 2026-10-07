@@ -2,13 +2,22 @@
 
 namespace App\Models;
 
+use App\Observers\ZoneObserver;
+use Illuminate\Database\Eloquent\Attributes\ObservedBy;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+#[ObservedBy(ZoneObserver::class)]
 class Zone extends Model
 {
     use HasFactory;
+
+    public const RISK_LEVELS = [
+        'low' => 'Faible',
+        'medium' => 'Moyen',
+        'high' => 'Élevé',
+    ];
 
     protected $fillable = [
         'name',
@@ -30,5 +39,10 @@ class Zone extends Model
     public function alerts(): HasMany
     {
         return $this->hasMany(Alert::class);
+    }
+
+    public function getRiskLabelAttribute(): string
+    {
+        return self::RISK_LEVELS[$this->risk_level] ?? $this->risk_level;
     }
 }

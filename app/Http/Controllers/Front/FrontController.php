@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
+use App\Models\Alert;
 use App\Http\Requests\ReportMalfunctionRequest;
 use App\Models\Financement;
 use App\Models\Incident;
@@ -81,6 +82,42 @@ class FrontController extends Controller
     public function contact(): View
     {
         return view('front.contact', $this->shared());
+    }
+
+    public function zones(): View
+    {
+        $zones = Zone::withCount(['infrastructures', 'incidents'])
+            ->orderBy('name')
+            ->get()
+            ->map(fn($z) => [
+                'name' => $z->name,
+                'address' => $z->address,
+                'description' => $z->description,
+                'risk' => $z->risk_label,
+                'riskLevel' => $z->risk_level,
+                'infrastructures' => $z->infrastructures_count,
+                'incidents' => $z->incidents_count,
+            ])->toArray();
+
+        return view('front.zones.index', $this->shared() + ['zones' => $zones]);
+    }
+
+    public function alerts(): View
+    {
+        $alerts = Alert::with(['zone', 'incident'])
+            ->latest()
+            ->get()
+            ->map(fn($a) => [
+                'type' => $a->type,
+                'message' => $a->message,
+                'zone' => $a->zone->name ?? 'Zone non définie',
+                'severity' => $a->severity_label,
+                'severityLevel' => $a->severity,
+                'status' => $a->read_at ? 'Lue' : 'Non lue',
+                'date' => $a->created_at?->format('d M Y H:i'),
+            ])->toArray();
+
+        return view('front.alerts.index', $this->shared() + ['alerts' => $alerts]);
     }
 
     public function incidents(): View

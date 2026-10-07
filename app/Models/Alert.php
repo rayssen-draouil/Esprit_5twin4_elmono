@@ -10,6 +10,13 @@ class Alert extends Model
 {
     use HasFactory;
 
+    public const SEVERITIES = [
+        'low' => 'Faible',
+        'medium' => 'Moyen',
+        'high' => 'Élevé',
+        'critical' => 'Critique',
+    ];
+
     protected $fillable = [
         'zone_id',
         'incident_id',
@@ -34,5 +41,10 @@ class Alert extends Model
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
+    }
+
+    public function getSeverityLabelAttribute(): string
+    {
+        return self::SEVERITIES[$this->severity] ?? $this->severity;
     }
 }
