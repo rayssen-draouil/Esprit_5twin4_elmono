@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Alert;
 use App\Models\Incident;
+use App\Models\User;
 use App\Models\Zone;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -17,6 +18,7 @@ class AlertTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        $this->actingAs(User::factory()->create(['role' => 'admin']));
     }
 
     public function test_alert_list_loads(): void
