@@ -25,6 +25,16 @@
                 ▦ <span>Infrastructures</span>
             </a>
 
+            <a class="{{ request()->routeIs('interventions.*') ? 'active' : '' }}"
+               href="{{ route('interventions.index') }}">
+                ⚒ <span>Interventions</span>
+            </a>
+
+            <a class="{{ request()->routeIs('techniciens.*') ? 'active' : '' }}"
+               href="{{ route('techniciens.index') }}">
+                ♙ <span>Techniciens</span>
+            </a>
+
             <p class="sidebar-label">PROJECTS</p>
 
             <a class="{{ request()->routeIs('projects.*') || request()->routeIs('back.projects') ? 'active' : '' }}"

@@ -5,8 +5,10 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinancementController;
 use App\Http\Controllers\Front\FrontController;
+use App\Http\Controllers\InterventionController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TechnicienController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -75,4 +77,12 @@ Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('admin')-
     Route::resource('financements', FinancementController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
         ->names('financements');
+
+    Route::resource('interventions', InterventionController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->names('interventions');
+
+    Route::resource('techniciens', TechnicienController::class)
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
+        ->names('techniciens');
 });
