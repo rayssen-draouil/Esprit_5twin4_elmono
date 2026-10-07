@@ -5,7 +5,6 @@
 .sidebar.collapsed .sidebar-logout span{display:none}
 .sidebar{overflow-y:auto;overflow-x:hidden}
 .sidebar-bottom{padding-bottom:8px}
-
 .back-content .panel{overflow-x:auto}
 .back-content .table-wrap table{min-width:900px}
 .back-content .table-wrap td form{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
