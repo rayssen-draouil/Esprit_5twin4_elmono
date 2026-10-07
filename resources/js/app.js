@@ -1,4 +1,5 @@
 import './bootstrap';
+import './infra-validation';
 
 document.querySelector('.menu-toggle')?.addEventListener('click', () => {
     document.querySelector('.site-header nav')?.classList.toggle('mobile-open');

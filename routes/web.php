@@ -5,7 +5,9 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FinancementController;
 use App\Http\Controllers\Front\FrontController;
+use App\Http\Controllers\InfrastructureController;
 use App\Http\Controllers\InterventionController;
+use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\ProjectController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TechnicienController;
@@ -38,6 +40,7 @@ Route::middleware('auth')->group(function () {
 });
 Route::get('/infrastructures', [FrontController::class, 'infrastructures'])->name('front.infrastructures.index');
 Route::get('/infrastructures/{infrastructure}', [FrontController::class, 'showInfrastructure'])->name('front.infrastructures.show');
+Route::post('/infrastructures/{infrastructure}/report-malfunction', [FrontController::class, 'reportMalfunction'])->name('front.infrastructures.report');
 Route::get('/projects', [FrontController::class, 'projects'])->name('front.projects.index');
 Route::get('/projects/{project}', [FrontController::class, 'showProject'])->name('front.projects.show');
 Route::get('/funding', [FrontController::class, 'funding'])->name('front.funding');
@@ -57,7 +60,6 @@ Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('back')->
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/', [BackController::class, 'dashboard'])->name('dashboard');
     Route::get('/incidents', [BackController::class, 'incidents'])->name('incidents.index');
-    Route::get('/infrastructures', [BackController::class, 'infrastructures'])->name('infrastructures.index');
     Route::get('/funding', [BackController::class, 'funding'])->name('funding.index');
     Route::patch('/signalements/{signalement}', [BackController::class, 'updateSignalement'])->name('signalements.update');
     Route::delete('/signalements/{signalement}', [BackController::class, 'destroySignalement'])->name('signalements.destroy');
@@ -70,6 +72,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
 });
 
 Route::middleware(['auth', 'role:admin,manager,gestionnaire'])->prefix('admin')->group(function () {
+    Route::resource('infrastructures', InfrastructureController::class)->names('infrastructures');
+    Route::resource('maintenances', MaintenanceController::class)->names('maintenances');
+    Route::post('/maintenances/{maintenance}/start', [MaintenanceController::class, 'start'])->name('maintenances.start');
+
     Route::resource('projects', ProjectController::class)
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy'])
         ->names('projects');

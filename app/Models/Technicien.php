@@ -22,4 +22,9 @@ class Technicien extends Model
     {
         return $this->hasMany(Intervention::class, 'technician_id');
     }
+
+    public function maintenances(): HasMany
+    {
+        return $this->hasMany(Maintenance::class, 'technician_id');
+    }
 }
