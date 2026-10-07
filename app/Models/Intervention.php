@@ -12,6 +12,7 @@ class Intervention extends Model
 
     protected $fillable = [
         'incident_id',
+        'technician_id',
         'team',
         'scheduled_at',
         'status',
@@ -32,5 +33,10 @@ class Intervention extends Model
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
+    }
+
+    public function technician(): BelongsTo
+    {
+        return $this->belongsTo(Technicien::class, 'technician_id');
     }
 }
