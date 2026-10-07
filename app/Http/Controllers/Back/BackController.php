@@ -177,19 +177,9 @@ class BackController extends Controller
         return back()->with('success', 'Incident supprimé.');
     }
 
-    public function infrastructures(): View
+    public function infrastructures(): RedirectResponse
     {
-        $items = Infrastructure::with('zone')->get()->map(function ($item) {
-            return [
-                'name' => $item->name,
-                'type' => $item->type,
-                'region' => $item->zone->name ?? 'France',
-                'health' => $item->status === 'operational' ? '98%' : ($item->status === 'maintenance' ? '76%' : '45%'),
-                'status' => $item->status === 'operational' ? 'Connectée' : 'Maintenance',
-            ];
-        });
-
-        return view('back.infrastructures.index', compact('items'));
+        return redirect()->route('infrastructures.index');
     }
 
     public function projects(): View

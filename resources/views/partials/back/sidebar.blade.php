@@ -30,9 +30,14 @@
                 ◉ <span>Alertes</span>
             </a>
 
-            <a class="{{ request()->routeIs('back.infrastructures') ? 'active' : '' }}"
-               href="{{ route('back.infrastructures') }}">
+            <a class="{{ request()->routeIs('infrastructures.*') || request()->routeIs('back.infrastructures') ? 'active' : '' }}"
+               href="{{ route('infrastructures.index') }}">
                 ▦ <span>Infrastructures</span>
+            </a>
+
+            <a class="{{ request()->routeIs('maintenances.*') ? 'active' : '' }}"
+               href="{{ route('maintenances.index') }}">
+                ⛯ <span>Maintenances</span>
             </a>
 
             <a class="{{ request()->routeIs('interventions.*') ? 'active' : '' }}"

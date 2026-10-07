@@ -4,9 +4,11 @@ namespace App\Http\Controllers\Front;
 
 use App\Http\Controllers\Controller;
 use App\Models\Alert;
+use App\Http\Requests\ReportMalfunctionRequest;
 use App\Models\Financement;
 use App\Models\Incident;
 use App\Models\Infrastructure;
+use App\Models\Maintenance;
 use App\Models\Project;
 use App\Models\Signalement;
 use App\Models\Zone;
@@ -207,23 +209,100 @@ class FrontController extends Controller
         return view('front.incidents.show', $this->shared() + ['incident' => $incidentData, 'incidentCode' => $incidentData['id']]);
     }
 
-    public function infrastructures(): View
+    public function infrastructures(Request $request): View
     {
-        return view('front.infrastructures.index', $this->shared() + ['infrastructures' => $this->infrastructureData()]);
+        $query = Infrastructure::with(['zone', 'maintenances'])
+            ->search($request->input('search'))
+            ->zone($request->input('zone_id'))
+            ->type($request->input('type'))
+            ->condition($request->input('condition'));
+
+        $quick = $request->input('quick');
+        if ($quick === 'operational') {
+            $query->where('status', 'operational');
+        } elseif ($quick === 'maintenance') {
+            $query->where('status', 'maintenance');
+        } elseif ($quick === 'critical') {
+            $query->whereIn('status', ['critical', 'offline', 'out_of_service']);
+        } elseif ($request->filled('status')) {
+            $query->status($request->input('status'));
+        }
+
+        $infrastructures = $query->latest()->paginate(9)->withQueryString();
+
+        $zones = Zone::orderBy('name')->get();
+        $types = Infrastructure::distinct()->whereNotNull('type')->pluck('type')->sort()->values();
+        $totalCount = Infrastructure::count();
+        $operationalCount = Infrastructure::where('status', 'operational')->count();
+
+        return view('front.infrastructures.index', $this->shared() + compact(
+            'infrastructures',
+            'zones',
+            'types',
+            'totalCount',
+            'operationalCount'
+        ));
     }
 
     public function showInfrastructure(string $infrastructure): View
     {
-        $record = Infrastructure::with('zone')->where('id', $infrastructure)->orWhere('name', $infrastructure)->first();
-        $infraData = $record ? [
-            'name' => $record->name,
-            'type' => $record->type,
-            'region' => $record->zone->name ?? 'France',
-            'health' => $record->status === 'operational' ? '98%' : ($record->status === 'maintenance' ? '76%' : '45%'),
-            'status' => $record->status === 'operational' ? 'Connectée' : 'Maintenance',
-        ] : ($this->infrastructureData()[0] ?? []);
+        $record = Infrastructure::with([
+            'zone',
+            'maintenances' => fn ($q) => $q->orderBy('scheduled_at', 'desc')->limit(10),
+        ])
+        ->where('id', $infrastructure)
+        ->orWhere('reference_code', $infrastructure)
+        ->orWhere('name', $infrastructure)
+        ->first();
 
-        return view('front.infrastructures.show', $this->shared() + ['infrastructure' => $infraData, 'infrastructureCode' => $infrastructure]);
+        if (!$record) {
+            abort(404, 'Infrastructure introuvable.');
+        }
+
+        return view('front.infrastructures.show', $this->shared() + [
+            'infrastructure' => $record,
+            'infrastructureCode' => $record->reference_code ?? ('INF-' . $record->id),
+        ]);
+    }
+
+    public function reportMalfunction(ReportMalfunctionRequest $request, string $infrastructure): RedirectResponse
+    {
+        $infra = Infrastructure::where('id', $infrastructure)
+            ->orWhere('reference_code', $infrastructure)
+            ->orWhere('name', $infrastructure)
+            ->firstOrFail();
+
+        $validated = $request->validated();
+
+        $reporter = $validated['reporter_name'] ?: (auth()->user()?->name ?? 'Citoyen');
+        $phone = $validated['reporter_phone'] ?: '';
+        $type = $validated['malfunction_type'];
+
+        $nextId = (Maintenance::max('id') ?? 0) + 1;
+        $refCode = sprintf('MNT-%s-SIG-%03d', date('Y'), $nextId);
+
+        $maintenance = Maintenance::create([
+            'infrastructure_id' => $infra->id,
+            'reference_code' => $refCode,
+            'type' => 'Corrective',
+            'status' => 'reported',
+            'priority' => $validated['priority'],
+            'scheduled_at' => now(),
+            'team' => 'Signalement usager (' . $reporter . ')',
+            'description' => "[Dysfonctionnement signalé : {$type}] " . $validated['description'] . " (Signalé par : {$reporter}" . ($phone ? " - Tél: {$phone}" : "") . ")",
+        ]);
+
+        // If high or critical, update infrastructure status
+        if ($validated['priority'] === 'critical') {
+            $infra->status = 'critical';
+            $infra->condition = 'critical';
+            $infra->save();
+        } elseif ($validated['priority'] === 'high' && $infra->status === 'operational') {
+            $infra->condition = 'poor';
+            $infra->save();
+        }
+
+        return back()->with('success', "Votre signalement sur l'infrastructure « {$infra->name} » a été transmis avec succès aux équipes de maintenance (Réf. {$refCode}). Un ordre d'intervention a été initié.");
     }
 
     public function showProject(string $project): View
