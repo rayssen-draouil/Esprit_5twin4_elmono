@@ -7,14 +7,14 @@
         <p>Votre signalement permet à nos équipes d'intervenir rapidement.</p>
     </section>
     <section class="section contact-layout">
-        <form class="contact-form" method="POST" action="{{ route('front.incidents.store') }}" enctype="multipart/form-data" novalidate>
+        <form class="contact-form validated-form" method="POST" action="{{ route('front.incidents.store') }}" enctype="multipart/form-data" novalidate id="form_incident">
             @csrf
             <fieldset class="signalement-type">
                 <legend>Type de signalement</legend>
                 <label class="signalement-option" for="type-fuite">
                     <span class="signalement-icon" aria-hidden="true">💧</span>
                     <span>Fuite d'eau</span>
-                    <input id="type-fuite" type="radio" name="type" value="Fuite d'eau" @checked(old('type') === "Fuite d'eau")>
+                    <input id="type-fuite" type="radio" name="type" value="Fuite d'eau" data-label="Type de signalement" data-rules="required" @checked(old('type') === "Fuite d'eau")>
                 </label>
                 <label class="signalement-option" for="type-contamination">
                     <span class="signalement-icon" aria-hidden="true">◉</span>
@@ -33,13 +33,16 @@
                 </label>
             </fieldset>
             <label>Titre
-                <input name="title" type="text" placeholder="Ex. Fuite sur conduite principale">
+                <input name="title" type="text" data-label="Titre" data-rules="required|min:3|max:255" value="{{ old('title') }}" placeholder="Ex. Fuite sur conduite principale">
+                @error('title')<small class="field-error">{{ $message }}</small>@enderror
             </label>
             <label>Description
-                <textarea name="description" rows="6" placeholder="Décrivez ce que vous avez observé...">{{ old('description') }}</textarea>
+                <textarea name="description" rows="6" data-label="Description" data-rules="required|min:10|max:5000" placeholder="Décrivez ce que vous avez observé...">{{ old('description') }}</textarea>
+                @error('description')<small class="field-error">{{ $message }}</small>@enderror
             </label>
             <label>Localisation
-                <input name="location" type="text" value="{{ old('location') }}" placeholder="Adresse, commune ou infrastructure">
+                <input name="location" type="text" data-label="Localisation" data-rules="required|min:3|max:255" value="{{ old('location') }}" placeholder="Adresse, commune ou infrastructure">
+                @error('location')<small class="field-error">{{ $message }}</small>@enderror
             </label>
             <fieldset class="signalement-type signalement-severity">
                 <legend>Niveau de gravité</legend>
@@ -65,7 +68,8 @@
                 </label>
             </fieldset>
             <label>Date de l'incident
-                <input name="incident_date" type="date" value="{{ old('incident_date', now()->format('Y-m-d')) }}">
+                <input name="incident_date" type="date" data-label="Date de l'incident" value="{{ old('incident_date', now()->format('Y-m-d')) }}">
+                @error('incident_date')<small class="field-error">{{ $message }}</small>@enderror
             </label>
             <div class="photo-upload">
                 <span class="form-label">Photo (facultatif)</span>

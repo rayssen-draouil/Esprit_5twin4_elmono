@@ -21,6 +21,20 @@
     font-size:12px;
 }
 .back-content .table-wrap td input[name="description"]{min-width:220px}
+.back-content .table-wrap td .button{
+    min-height:36px;
+    padding:8px 12px;
+    font-size:11px;
+    white-space:nowrap;
+}
+.back-content .incident-photo-thumb{
+    display:block;
+    width:72px;
+    height:54px;
+    object-fit:cover;
+    border:1px solid var(--line);
+    border-radius:5px;
+}
 .back-content .table-wrap td input:focus,
 .back-content .table-wrap td select:focus{
     outline:0;
@@ -331,5 +345,3 @@ nav[role="navigation"] a.inline-flex {
         text-align: center !important;
     }
 }
-
-
