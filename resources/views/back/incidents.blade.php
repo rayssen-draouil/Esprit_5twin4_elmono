@@ -18,7 +18,7 @@
             <td><form method="POST" action="{{ route('back.signalements.confirm', $signalement) }}">@csrf
                 <input name="description" value="{{ $signalement->description }}" aria-label="Description de l'incident">
                 <select name="severity"><option value="low">Faible</option><option value="medium" selected>Moyenne</option><option value="high">Élevée</option><option value="critical">Critique</option></select>
-                <button class="button button-primary" type="submit">Confirmer</button>
+                <button class="button button-primary button-small" type="submit">Confirmer</button>
             </form>
             @if(auth()->user()->role === 'admin')
                 <div class="admin-actions">

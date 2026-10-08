@@ -136,7 +136,7 @@ class FrontController extends Controller
     {
         $validated = $request->validate([
             'type' => 'required|string|max:100',
-            'title' => 'nullable|string|max:255',
+            'title' => 'required|string|min:3|max:255',
             'description' => 'required|string',
             'location' => 'required|string|max:255',
             'priority' => 'nullable|string|max:50',
@@ -202,7 +202,7 @@ class FrontController extends Controller
             ][$record->status] ?? $record->status,
             'date' => $record->reported_at ? $record->reported_at->format('d M Y') : now()->format('d M Y'),
             'description' => $record->description,
-            'photo_path' => $record->photo_path,
+            'photo_path' => $record->photo_path ?? $record->signalements->first()?->photo_path,
             'type' => $record->type,
         ];
 

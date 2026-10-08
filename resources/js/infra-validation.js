@@ -31,7 +31,12 @@ export function initInfraValidation() {
 
             // 1. Règle "required"
             if (rules.includes('required') || input.hasAttribute('required')) {
-                if (val === '') {
+                const isRadio = input.type === 'radio';
+                const radioGroup = isRadio ? form.querySelectorAll(`input[type="radio"][name="${input.name}"]`) : [];
+                const isFirstRadio = isRadio && radioGroup[0] === input;
+                const isGroupEmpty = isRadio && !form.querySelector(`input[type="radio"][name="${input.name}"]:checked`);
+
+                if ((!isRadio && val === '') || (isFirstRadio && isGroupEmpty)) {
                     error = `Le champ « ${label} » est obligatoire.`;
                 }
             }
